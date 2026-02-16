@@ -9,32 +9,26 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* All your existing CSS stays as is */
-:root {
-    --glow-color: #00bfff;
-    --primary-text-color: #E0FFFF;
-    --background-color: #020a1a;
-    --container-bg: rgba(0, 38, 77, 0.2);
-    --border-color: rgba(0, 191, 255, 0.3);
-}
+/* === Existing CSS Kept === */
+:root { --glow-color: #00bfff; --primary-text-color: #E0FFFF; --background-color: #020a1a; --container-bg: rgba(0, 38, 77, 0.2); --border-color: rgba(0, 191, 255, 0.3); }
 body { font-family: 'Rajdhani', sans-serif; background-color: var(--background-color); color: var(--primary-text-color); overflow: hidden; background-image: linear-gradient(rgba(0, 191, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 191, 255, 0.1) 1px, transparent 1px); background-size: 20px 20px; }
 .glow-text { text-shadow: 0 0 5px var(--glow-color), 0 0 10px var(--glow-color), 0 0 15px var(--glow-color); }
 .glow-border { border: 1px solid var(--border-color); box-shadow: 0 0 10px var(--glow-color) inset, 0 0 5px var(--glow-color); }
 .hud-element { background-color: var(--container-bg); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); border: 1px solid var(--border-color); box-shadow: 0 0 15px rgba(0,191,255,0.2); }
 #orb-container { perspective: 1000px; }
 #orb { width: 300px; height: 300px; position: relative; transform-style: preserve-3d; animation: rotateOrb 40s linear infinite; }
-.ring { position: absolute; top: 0; left:0; width:100%; height:100%; border-radius:50%; border:2px solid var(--glow-color); box-shadow:0 0 10px var(--glow-color),0 0 20px var(--glow-color) inset; transform-style: preserve-3d; }
-.ring:nth-child(1){transform: rotateY(70deg) rotateX(20deg); animation: rotateRing1 8s ease-in-out infinite alternate;}
-.ring:nth-child(2){transform: rotateY(-70deg) rotateX(-20deg); animation: rotateRing2 10s ease-in-out infinite alternate;}
-.ring:nth-child(3){transform: rotateX(90deg); animation: rotateRing3 12s ease-in-out infinite alternate;}
-#core{width:50px;height:50px;background:var(--glow-color);border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 0 20px 10px var(--glow-color),0 0 50px 20px rgba(0,191,255,0.5);animation:pulseCore 2s ease-in-out infinite;}
-#orb.listening .ring{animation-duration:2s;border-color:#ffde59;box-shadow:0 0 15px #ffde59,0 0 30px #ffde59 inset;}
-#orb.listening #core{background:#ffde59;box-shadow:0 0 20px 10px #ffde59,0 0 50px 20px rgba(255,222,89,0.5);}
-@keyframes rotateOrb{from{transform:rotateY(0deg) rotateX(10deg);}to{transform:rotateY(360deg) rotateX(10deg);}}
-@keyframes rotateRing1{from{transform: rotateY(70deg) rotateX(20deg);}to{transform: rotateY(90deg) rotateX(50deg);}}
-@keyframes rotateRing2{from{transform: rotateY(-70deg) rotateX(-20deg);}to{transform: rotateY(-90deg) rotateX(-50deg);}}
-@keyframes rotateRing3{from{transform: rotateX(90deg) rotateY(0deg);}to{transform: rotateX(70deg) rotateY(45deg);}}
-@keyframes pulseCore{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:1;}50%{transform:translate(-50%,-50%) scale(1.1);opacity:0.8;}}
+.ring { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--glow-color); box-shadow: 0 0 10px var(--glow-color), 0 0 20px var(--glow-color) inset; transform-style: preserve-3d; }
+.ring:nth-child(1) { transform: rotateY(70deg) rotateX(20deg); animation: rotateRing1 8s ease-in-out infinite alternate; }
+.ring:nth-child(2) { transform: rotateY(-70deg) rotateX(-20deg); animation: rotateRing2 10s ease-in-out infinite alternate; }
+.ring:nth-child(3) { transform: rotateX(90deg); animation: rotateRing3 12s ease-in-out infinite alternate; }
+#core { width: 50px; height: 50px; background: var(--glow-color); border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 20px 10px var(--glow-color), 0 0 50px 20px rgba(0,191,255,0.5); animation: pulseCore 2s ease-in-out infinite; }
+#orb.listening .ring { animation-duration: 2s; border-color: #ffde59; box-shadow: 0 0 15px #ffde59, 0 0 30px #ffde59 inset; }
+#orb.listening #core { background: #ffde59; box-shadow: 0 0 20px 10px #ffde59, 0 0 50px 20px rgba(255,222,89,0.5); }
+@keyframes rotateOrb { from { transform: rotateY(0deg) rotateX(10deg); } to { transform: rotateY(360deg) rotateX(10deg); } }
+@keyframes rotateRing1 { from { transform: rotateY(70deg) rotateX(20deg); } to { transform: rotateY(90deg) rotateX(50deg); } }
+@keyframes rotateRing2 { from { transform: rotateY(-70deg) rotateX(-20deg); } to { transform: rotateY(-90deg) rotateX(-50deg); } }
+@keyframes rotateRing3 { from { transform: rotateX(90deg) rotateY(0deg); } to { transform: rotateX(70deg) rotateY(45deg); } }
+@keyframes pulseCore { 0%,100%{ transform: translate(-50%, -50%) scale(1); opacity:1;} 50%{transform: translate(-50%, -50%) scale(1.1); opacity:0.8;} }
 ::-webkit-scrollbar{width:8px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--glow-color);border-radius:4px;}
@@ -68,7 +62,6 @@ body { font-family: 'Rajdhani', sans-serif; background-color: var(--background-c
 <button id="start-btn" class="w-full bg-cyan-500/20 hover:bg-cyan-500/40 text-white font-bold py-2 px-4 rounded-lg glow-border transition-all duration-300">ACTIVATE J.A.R.V.I.S.</button>
 </div>
 </div>
-
 </div>
 
 <script type="module">
@@ -89,7 +82,7 @@ let jarvisVoice = null;
 let isListening = false;
 let isActivated = false;
 
-// Groq key
+// --- Groq API ---
 const GROQ_API_KEY = "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";
 
 window.onload = () => {
@@ -106,12 +99,7 @@ function speak(text,onEndCallback=()=>{}){if(synth.speaking)synth.cancel(); if(t
 function addLog(speaker,message){const entry=document.createElement('p'); entry.className='mb-1'; entry.innerHTML=`<strong class="glow-text ${speaker==='J.A.R.V.I.S.'?'text-cyan-400':'text-white'}">${speaker}:</strong> ${message}`; logContainer.appendChild(entry); logContainer.scrollTop=logContainer.scrollHeight;}
 function updateStatus(text){statusText.textContent=text.toUpperCase(); text.toLowerCase()==='listening'?orb.classList.add('listening'):orb.classList.remove('listening');}
 function startListening(){if(isListening||synth.speaking)return; try{recognition.start(); isListening=true;}catch(e){isListening=false;}}
-function setupRecognition(){
-recognition.continuous=false; recognition.lang='en-US';
-recognition.onstart=()=>{isListening=true;updateStatus('Listening');};
-recognition.onresult=(e)=>{const transcript=e.results[0][0].transcript.trim(); addLog('User',transcript); processCommand(transcript);};
-recognition.onend=()=>{isListening=false; if(isActivated && !synth.speaking){updateStatus('Thinking'); setTimeout(()=>{if(isActivated)startListening();},500);}};
-}
+function setupRecognition(){recognition.continuous=false; recognition.lang='en-US'; recognition.onstart=()=>{isListening=true;updateStatus('Listening');}; recognition.onresult=(e)=>{const transcript=e.results[0][0].transcript.trim(); addLog('User',transcript); processCommand(transcript);}; recognition.onend=()=>{isListening=false; if(isActivated&&!synth.speaking){updateStatus('Thinking'); setTimeout(()=>{if(isActivated)startListening();},500);}}}
 
 // --- BROWSER CONTROL FUNCTIONS ---
 function browserCommand(cmd){
@@ -123,7 +111,7 @@ function browserCommand(cmd){
         const text=cmd.replace("click","").trim().toLowerCase();
         const btns=[...document.querySelectorAll('button,input[type=button],a')];
         const found=btns.find(b=>b.innerText.toLowerCase().includes(text)||b.value?.toLowerCase().includes(text));
-        if(found){found.click(); addLog('J.A.R.V.I.S.',`Clicked on "${found.innerText||found.value}"`);}
+        if(found){found.click(); addLog('J.A.R.V.I.S.',`Clicked "${found.innerText||found.value}"`);}
         else addLog('J.A.R.V.I.S.','Button not found.');
     }
     if(cmd.includes("type")) {
@@ -146,8 +134,7 @@ async function processCommand(command){
         window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`,'_blank');
         return;
     }
-    // BROWSER COMMANDS
-    browserCommand(command);
+    browserCommand(command); // <-- handle scrolling, clicks, typing
     try{
         const response=await askAI(command);
         speak(response); addLog('J.A.R.V.I.S.',response);
