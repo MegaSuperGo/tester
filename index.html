@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tesseract for local OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         :root {
             --glow-color: #00bfff;
@@ -150,6 +152,18 @@
         }
 
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* CAMERA PREVIEW */
+        #camera-feed {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 240px;
+            height: 180px;
+            border: 2px solid var(--glow-color);
+            display: none;
+        }
+
     </style>
 </head>
 <body class="bg-gray-900 text-cyan-200">
@@ -189,13 +203,21 @@
                  <button id="start-btn" class="w-full bg-cyan-500/20 hover:bg-cyan-500/40 text-white font-bold py-2 px-4 rounded-lg glow-border transition-all duration-300">
                     ACTIVATE J.A.R.V.I.S.
                 </button>
+                <button id="camera-btn" class="w-full mt-2 bg-green-500/20 hover:bg-green-500/40 text-white font-bold py-2 px-4 rounded-lg glow-border transition-all duration-300">
+                    ACTIVATE CAMERA VISION
+                </button>
             </div>
         </div>
 
     </div>
 
+    <!-- Camera feed for vision -->
+    <video id="camera-feed" autoplay muted></video>
+    <canvas id="camera-canvas" hidden></canvas>
+
     <script type="module">
         const startBtn = document.getElementById('start-btn');
+        const cameraBtn = document.getElementById('camera-btn');
         const statusText = document.getElementById('status-text');
         const logContainer = document.getElementById('log-container');
         const orb = document.getElementById('orb');
@@ -203,6 +225,10 @@
         const dateEl = document.getElementById('date');
         const loadingOverlay = document.getElementById('loading-overlay');
         const jarvisContainer = document.getElementById('jarvis-container');
+
+        const cameraFeed = document.getElementById('camera-feed');
+        const cameraCanvas = document.getElementById('camera-canvas');
+        const cameraCtx = cameraCanvas.getContext('2d');
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = SpeechRecognition ? new SpeechRecognition() : null;
@@ -212,15 +238,10 @@
         let isListening = false;
         let isActivated = false;
 
-        // --- Groq Configuration (Using your specific structure) ---
         const GROQ_API_KEY = "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";
 
+        // ----------------- INITIAL SETUP -----------------
         window.onload = () => {
-            if (!SpeechRecognition || !synth) {
-                addLog('System', 'Browser does not support required APIs.');
-                return;
-            }
-            
             setupVoices();
             if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = setupVoices;
             
@@ -261,7 +282,7 @@
                 synth.speak(utterance);
             }
         }
-        
+
         function addLog(speaker, message) {
             const entry = document.createElement('p');
             entry.className = 'mb-1';
@@ -274,7 +295,8 @@
             statusText.textContent = text.toUpperCase();
             text.toLowerCase() === 'listening' ? orb.classList.add('listening') : orb.classList.remove('listening');
         }
-        
+
+        // ----------------- LISTENING & COMMANDS -----------------
         function startListening() {
             if (isListening || synth.speaking) return;
             try {
@@ -286,7 +308,6 @@
         function setupRecognition() {
             recognition.continuous = false;
             recognition.lang = 'en-US';
-
             recognition.onstart = () => { isListening = true; updateStatus('Listening'); };
             recognition.onresult = (e) => {
                 const transcript = e.results[0][0].transcript.trim();
@@ -322,8 +343,12 @@
                 return;
             }
 
+            if (lower.includes('scan environment') || lower.includes('what do you see')) {
+                analyzeVision();
+                return;
+            }
+
             try {
-                // Using your requested function name and logic
                 const response = await askAI(command);
                 speak(response);
                 addLog('J.A.R.V.I.S.', response);
@@ -334,7 +359,6 @@
             }
         }
 
-        // --- Your Requested Groq Logic Implementation ---
         async function askAI(prompt) {
           const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
             method: "POST",
@@ -355,6 +379,46 @@
           return data.choices[0].message.content;
         }
 
+        // ----------------- CAMERA / VISION -----------------
+        async function activateCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                cameraFeed.srcObject = stream;
+                cameraFeed.style.display = 'block';
+                addLog('System', 'Camera vision activated.');
+            } catch(e) {
+                addLog('System', 'Camera access denied.');
+            }
+        }
+
+        async function analyzeVision() {
+            if (!cameraFeed.srcObject) {
+                addLog('J.A.R.V.I.S.', 'Camera is not active, sir.');
+                return;
+            }
+            cameraCanvas.width = cameraFeed.videoWidth;
+            cameraCanvas.height = cameraFeed.videoHeight;
+            cameraCtx.drawImage(cameraFeed, 0, 0);
+            const imageData = cameraCtx.getImageData(0,0,cameraCanvas.width,cameraCanvas.height);
+
+            // Basic brightness analysis
+            let brightness = 0;
+            for (let i=0;i<imageData.data.length;i+=4) {
+                brightness += (imageData.data[i]+imageData.data[i+1]+imageData.data[i+2])/3;
+            }
+            brightness /= (imageData.data.length/4);
+            addLog('J.A.R.V.I.S.', brightness>120?'Scene appears bright.':'Scene appears dark.');
+
+            // OCR using Tesseract.js
+            const { data } = await Tesseract.recognize(cameraCanvas, 'eng');
+            if (data.text.trim().length>5) {
+                addLog('J.A.R.V.I.S.', `I see text: "${data.text.trim().slice(0,80)}..."`);
+            } else {
+                addLog('J.A.R.V.I.S.', 'No readable text detected.');
+            }
+        }
+
+        // ----------------- BUTTON EVENTS -----------------
         startBtn.addEventListener('click', () => {
             if (!isActivated) {
                 isActivated = true;
@@ -369,6 +433,11 @@
                 updateStatus('Deactivated');
             }
         });
+
+        cameraBtn.addEventListener('click', () => {
+            activateCamera();
+        });
+
     </script>
 </body>
 </html>
