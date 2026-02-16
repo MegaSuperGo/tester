@@ -1,443 +1,190 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>J.A.R.V.I.S. AI Assistant</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Tesseract for local OCR -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <style>
-        :root {
-            --glow-color: #00bfff;
-            --primary-text-color: #E0FFFF;
-            --background-color: #020a1a;
-            --container-bg: rgba(0, 38, 77, 0.2);
-            --border-color: rgba(0, 191, 255, 0.3);
-        }
-
-        body {
-            font-family: 'Rajdhani', sans-serif;
-            background-color: var(--background-color);
-            color: var(--primary-text-color);
-            overflow: hidden;
-            background-image:
-                linear-gradient(rgba(0, 191, 255, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 191, 255, 0.1) 1px, transparent 1px);
-            background-size: 20px 20px;
-        }
-
-        .glow-text {
-            text-shadow: 0 0 5px var(--glow-color), 0 0 10px var(--glow-color), 0 0 15px var(--glow-color);
-        }
-
-        .glow-border {
-            border: 1px solid var(--border-color);
-            box-shadow: 0 0 10px var(--glow-color) inset, 0 0 5px var(--glow-color);
-        }
-        
-        .hud-element {
-            background-color: var(--container-bg);
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-            border: 1px solid var(--border-color);
-            box-shadow: 0 0 15px rgba(0,191,255,0.2);
-        }
-
-        #orb-container {
-            perspective: 1000px;
-        }
-
-        #orb {
-            width: 300px;
-            height: 300px;
-            position: relative;
-            transform-style: preserve-3d;
-            animation: rotateOrb 40s linear infinite;
-        }
-
-        .ring {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 2px solid var(--glow-color);
-            box-shadow: 0 0 10px var(--glow-color), 0 0 20px var(--glow-color) inset;
-            transform-style: preserve-3d;
-        }
-
-        .ring:nth-child(1) { transform: rotateY(70deg) rotateX(20deg); animation: rotateRing1 8s ease-in-out infinite alternate; }
-        .ring:nth-child(2) { transform: rotateY(-70deg) rotateX(-20deg); animation: rotateRing2 10s ease-in-out infinite alternate; }
-        .ring:nth-child(3) { transform: rotateX(90deg); animation: rotateRing3 12s ease-in-out infinite alternate; }
-
-        #core {
-            width: 50px;
-            height: 50px;
-            background: var(--glow-color);
-            border-radius: 50%;
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            box-shadow: 0 0 20px 10px var(--glow-color), 0 0 50px 20px rgba(0,191,255,0.5);
-            animation: pulseCore 2s ease-in-out infinite;
-        }
-        
-        #orb.listening .ring {
-            animation-duration: 2s;
-            border-color: #ffde59;
-            box-shadow: 0 0 15px #ffde59, 0 0 30px #ffde59 inset;
-        }
-        
-        #orb.listening #core {
-             background: #ffde59;
-             box-shadow: 0 0 20px 10px #ffde59, 0 0 50px 20px rgba(255,222,89,0.5);
-        }
-
-        @keyframes rotateOrb {
-            from { transform: rotateY(0deg) rotateX(10deg); }
-            to { transform: rotateY(360deg) rotateX(10deg); }
-        }
-
-        @keyframes rotateRing1 {
-            from { transform: rotateY(70deg) rotateX(20deg); }
-            to { transform: rotateY(90deg) rotateX(50deg); }
-        }
-        @keyframes rotateRing2 {
-            from { transform: rotateY(-70deg) rotateX(-20deg); }
-            to { transform: rotateY(-90deg) rotateX(-50deg); }
-        }
-        @keyframes rotateRing3 {
-            from { transform: rotateX(90deg) rotateY(0deg); }
-            to { transform: rotateX(70deg) rotateY(45deg); }
-        }
-
-        @keyframes pulseCore {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.8; }
-        }
-
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--glow-color);
-            border-radius: 4px;
-        }
-        
-        #loading-overlay {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: var(--background-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            transition: opacity 0.5s ease-out;
-        }
-        
-        .spinner {
-            width: 60px; height: 60px;
-            border: 4px solid var(--border-color);
-            border-top-color: var(--glow-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* CAMERA PREVIEW */
-        #camera-feed {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 240px;
-            height: 180px;
-            border: 2px solid var(--glow-color);
-            display: none;
-        }
-
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J.A.R.V.I.S. AI Assistant</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* All your existing CSS stays as is */
+:root {
+    --glow-color: #00bfff;
+    --primary-text-color: #E0FFFF;
+    --background-color: #020a1a;
+    --container-bg: rgba(0, 38, 77, 0.2);
+    --border-color: rgba(0, 191, 255, 0.3);
+}
+body { font-family: 'Rajdhani', sans-serif; background-color: var(--background-color); color: var(--primary-text-color); overflow: hidden; background-image: linear-gradient(rgba(0, 191, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 191, 255, 0.1) 1px, transparent 1px); background-size: 20px 20px; }
+.glow-text { text-shadow: 0 0 5px var(--glow-color), 0 0 10px var(--glow-color), 0 0 15px var(--glow-color); }
+.glow-border { border: 1px solid var(--border-color); box-shadow: 0 0 10px var(--glow-color) inset, 0 0 5px var(--glow-color); }
+.hud-element { background-color: var(--container-bg); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); border: 1px solid var(--border-color); box-shadow: 0 0 15px rgba(0,191,255,0.2); }
+#orb-container { perspective: 1000px; }
+#orb { width: 300px; height: 300px; position: relative; transform-style: preserve-3d; animation: rotateOrb 40s linear infinite; }
+.ring { position: absolute; top: 0; left:0; width:100%; height:100%; border-radius:50%; border:2px solid var(--glow-color); box-shadow:0 0 10px var(--glow-color),0 0 20px var(--glow-color) inset; transform-style: preserve-3d; }
+.ring:nth-child(1){transform: rotateY(70deg) rotateX(20deg); animation: rotateRing1 8s ease-in-out infinite alternate;}
+.ring:nth-child(2){transform: rotateY(-70deg) rotateX(-20deg); animation: rotateRing2 10s ease-in-out infinite alternate;}
+.ring:nth-child(3){transform: rotateX(90deg); animation: rotateRing3 12s ease-in-out infinite alternate;}
+#core{width:50px;height:50px;background:var(--glow-color);border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 0 20px 10px var(--glow-color),0 0 50px 20px rgba(0,191,255,0.5);animation:pulseCore 2s ease-in-out infinite;}
+#orb.listening .ring{animation-duration:2s;border-color:#ffde59;box-shadow:0 0 15px #ffde59,0 0 30px #ffde59 inset;}
+#orb.listening #core{background:#ffde59;box-shadow:0 0 20px 10px #ffde59,0 0 50px 20px rgba(255,222,89,0.5);}
+@keyframes rotateOrb{from{transform:rotateY(0deg) rotateX(10deg);}to{transform:rotateY(360deg) rotateX(10deg);}}
+@keyframes rotateRing1{from{transform: rotateY(70deg) rotateX(20deg);}to{transform: rotateY(90deg) rotateX(50deg);}}
+@keyframes rotateRing2{from{transform: rotateY(-70deg) rotateX(-20deg);}to{transform: rotateY(-90deg) rotateX(-50deg);}}
+@keyframes rotateRing3{from{transform: rotateX(90deg) rotateY(0deg);}to{transform: rotateX(70deg) rotateY(45deg);}}
+@keyframes pulseCore{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:1;}50%{transform:translate(-50%,-50%) scale(1.1);opacity:0.8;}}
+::-webkit-scrollbar{width:8px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--glow-color);border-radius:4px;}
+#loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--background-color);display:flex;justify-content:center;align-items:center;z-index:9999;transition:opacity 0.5s ease-out;}
+.spinner{width:60px;height:60px;border:4px solid var(--border-color);border-top-color: var(--glow-color);border-radius:50%;animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
 </head>
 <body class="bg-gray-900 text-cyan-200">
 
-    <div id="loading-overlay">
-        <div class="spinner"></div>
-    </div>
-    
-    <div id="jarvis-container" class="w-full h-screen p-4 flex flex-col items-center justify-between relative opacity-0 transition-opacity duration-1000">
+<div id="loading-overlay"><div class="spinner"></div></div>
 
-        <header class="w-full max-w-7xl flex justify-between items-center hud-element glow-border p-4 rounded-lg">
-            <h1 class="text-2xl font-bold glow-text">J.A.R.V.I.S. // GROQ CORE</h1>
-            <div class="text-right">
-                <div id="time" class="text-xl"></div>
-                <div id="date" class="text-sm"></div>
-            </div>
-        </header>
+<div id="jarvis-container" class="w-full h-screen p-4 flex flex-col items-center justify-between relative opacity-0 transition-opacity duration-1000">
 
-        <main class="w-full flex-grow flex items-center justify-center my-4">
-            <div id="orb-container">
-                <div id="orb">
-                    <div class="ring"></div>
-                    <div class="ring"></div>
-                    <div class="ring"></div>
-                    <div id="core"></div>
-                </div>
-            </div>
-        </main>
-        
-        <div class="w-full max-w-4xl h-48 flex gap-4">
-            <div id="log-container" class="flex-grow hud-element glow-border p-4 rounded-lg overflow-y-auto"></div>
-            <div id="status-container" class="w-64 hud-element glow-border p-4 rounded-lg flex flex-col justify-between">
-                <div>
-                    <h2 class="text-lg glow-text border-b border-[var(--border-color)] pb-1 mb-2">SYSTEM STATUS</h2>
-                    <p id="status-text" class="text-center text-xl font-semibold">STANDBY</p>
-                </div>
-                 <button id="start-btn" class="w-full bg-cyan-500/20 hover:bg-cyan-500/40 text-white font-bold py-2 px-4 rounded-lg glow-border transition-all duration-300">
-                    ACTIVATE J.A.R.V.I.S.
-                </button>
-                <button id="camera-btn" class="w-full mt-2 bg-green-500/20 hover:bg-green-500/40 text-white font-bold py-2 px-4 rounded-lg glow-border transition-all duration-300">
-                    ACTIVATE CAMERA VISION
-                </button>
-            </div>
-        </div>
+<header class="w-full max-w-7xl flex justify-between items-center hud-element glow-border p-4 rounded-lg">
+<h1 class="text-2xl font-bold glow-text">J.A.R.V.I.S. // GROQ CORE</h1>
+<div class="text-right"><div id="time" class="text-xl"></div><div id="date" class="text-sm"></div></div>
+</header>
 
-    </div>
+<main class="w-full flex-grow flex items-center justify-center my-4">
+<div id="orb-container"><div id="orb"><div class="ring"></div><div class="ring"></div><div class="ring"></div><div id="core"></div></div></div>
+</main>
 
-    <!-- Camera feed for vision -->
-    <video id="camera-feed" autoplay muted></video>
-    <canvas id="camera-canvas" hidden></canvas>
+<div class="w-full max-w-4xl h-48 flex gap-4">
+<div id="log-container" class="flex-grow hud-element glow-border p-4 rounded-lg overflow-y-auto"></div>
+<div id="status-container" class="w-64 hud-element glow-border p-4 rounded-lg flex flex-col justify-between">
+<div>
+<h2 class="text-lg glow-text border-b border-[var(--border-color)] pb-1 mb-2">SYSTEM STATUS</h2>
+<p id="status-text" class="text-center text-xl font-semibold">STANDBY</p>
+</div>
+<button id="start-btn" class="w-full bg-cyan-500/20 hover:bg-cyan-500/40 text-white font-bold py-2 px-4 rounded-lg glow-border transition-all duration-300">ACTIVATE J.A.R.V.I.S.</button>
+</div>
+</div>
 
-    <script type="module">
-        const startBtn = document.getElementById('start-btn');
-        const cameraBtn = document.getElementById('camera-btn');
-        const statusText = document.getElementById('status-text');
-        const logContainer = document.getElementById('log-container');
-        const orb = document.getElementById('orb');
-        const timeEl = document.getElementById('time');
-        const dateEl = document.getElementById('date');
-        const loadingOverlay = document.getElementById('loading-overlay');
-        const jarvisContainer = document.getElementById('jarvis-container');
+</div>
 
-        const cameraFeed = document.getElementById('camera-feed');
-        const cameraCanvas = document.getElementById('camera-canvas');
-        const cameraCtx = cameraCanvas.getContext('2d');
+<script type="module">
+const startBtn = document.getElementById('start-btn');
+const statusText = document.getElementById('status-text');
+const logContainer = document.getElementById('log-container');
+const orb = document.getElementById('orb');
+const timeEl = document.getElementById('time');
+const dateEl = document.getElementById('date');
+const loadingOverlay = document.getElementById('loading-overlay');
+const jarvisContainer = document.getElementById('jarvis-container');
 
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = SpeechRecognition ? new SpeechRecognition() : null;
-        const synth = window.speechSynthesis;
-        let voices = [];
-        let jarvisVoice = null;
-        let isListening = false;
-        let isActivated = false;
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+const synth = window.speechSynthesis;
+let voices = [];
+let jarvisVoice = null;
+let isListening = false;
+let isActivated = false;
 
-        const GROQ_API_KEY = "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";
+// Groq key
+const GROQ_API_KEY = "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";
 
-        // ----------------- INITIAL SETUP -----------------
-        window.onload = () => {
-            setupVoices();
-            if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = setupVoices;
-            
-            setInterval(updateDateTime, 1000);
-            updateDateTime();
+window.onload = () => {
+    if (!SpeechRecognition || !synth) { addLog('System','Browser does not support required APIs.'); return; }
+    setupVoices();
+    if(synth.onvoiceschanged!==undefined) synth.onvoiceschanged=setupVoices;
+    setInterval(updateDateTime,1000); updateDateTime();
+    setTimeout(()=>{loadingOverlay.style.opacity='0'; jarvisContainer.style.opacity='1'; setTimeout(()=>loadingOverlay.style.display='none',500);},1000);
+};
 
-            setTimeout(() => {
-                loadingOverlay.style.opacity = '0';
-                jarvisContainer.style.opacity = '1';
-                setTimeout(() => loadingOverlay.style.display = 'none', 500);
-            }, 1000);
-        };
+function setupVoices(){voices=synth.getVoices(); jarvisVoice=voices.find(v=>v.name.includes('UK English Male'))||voices[0];}
+function updateDateTime(){const now=new Date(); timeEl.textContent=now.toLocaleTimeString(); dateEl.textContent=now.toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'});}
+function speak(text,onEndCallback=()=>{}){if(synth.speaking)synth.cancel(); if(text!==''){updateStatus('Speaking'); const u=new SpeechSynthesisUtterance(text); u.voice=jarvisVoice; u.pitch=0.95; u.rate=1.05; u.onend=()=>{updateStatus('Thinking'); onEndCallback(); if(isActivated) startListening();}; synth.speak(u);}}
+function addLog(speaker,message){const entry=document.createElement('p'); entry.className='mb-1'; entry.innerHTML=`<strong class="glow-text ${speaker==='J.A.R.V.I.S.'?'text-cyan-400':'text-white'}">${speaker}:</strong> ${message}`; logContainer.appendChild(entry); logContainer.scrollTop=logContainer.scrollHeight;}
+function updateStatus(text){statusText.textContent=text.toUpperCase(); text.toLowerCase()==='listening'?orb.classList.add('listening'):orb.classList.remove('listening');}
+function startListening(){if(isListening||synth.speaking)return; try{recognition.start(); isListening=true;}catch(e){isListening=false;}}
+function setupRecognition(){
+recognition.continuous=false; recognition.lang='en-US';
+recognition.onstart=()=>{isListening=true;updateStatus('Listening');};
+recognition.onresult=(e)=>{const transcript=e.results[0][0].transcript.trim(); addLog('User',transcript); processCommand(transcript);};
+recognition.onend=()=>{isListening=false; if(isActivated && !synth.speaking){updateStatus('Thinking'); setTimeout(()=>{if(isActivated)startListening();},500);}};
+}
 
-        function setupVoices() {
-            voices = synth.getVoices();
-            jarvisVoice = voices.find(v => v.name.includes('UK English Male')) || voices[0];
-        }
+// --- BROWSER CONTROL FUNCTIONS ---
+function browserCommand(cmd){
+    cmd=cmd.toLowerCase();
+    if(cmd.includes("scroll down")) window.scrollBy({top:200,behavior:"smooth"});
+    if(cmd.includes("scroll up")) window.scrollBy({top:-200,behavior:"smooth"});
+    if(cmd.includes("current page")) addLog('J.A.R.V.I.S.', `You are on: ${window.location.href}`);
+    if(cmd.includes("click")) {
+        const text=cmd.replace("click","").trim().toLowerCase();
+        const btns=[...document.querySelectorAll('button,input[type=button],a')];
+        const found=btns.find(b=>b.innerText.toLowerCase().includes(text)||b.value?.toLowerCase().includes(text));
+        if(found){found.click(); addLog('J.A.R.V.I.S.',`Clicked on "${found.innerText||found.value}"`);}
+        else addLog('J.A.R.V.I.S.','Button not found.');
+    }
+    if(cmd.includes("type")) {
+        const m=cmd.match(/type (.*?) in (.*)/);
+        if(m){const val=m[1]; const sel=m[2]; const el=document.querySelector(sel); if(el){el.value=val; addLog('J.A.R.V.I.S.',`Typed "${val}" into ${sel}`);}} 
+    }
+}
 
-        function updateDateTime() {
-            const now = new Date();
-            timeEl.textContent = now.toLocaleTimeString();
-            dateEl.textContent = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        }
+// --- PROCESS COMMAND ---
+async function processCommand(command){
+    updateStatus('Processing');
+    const lower=command.toLowerCase();
+    if(lower.includes('shutdown')||lower.includes('deactivate')){
+        speak("Shutting down systems. Goodbye, sir.",()=>{isActivated=false; startBtn.textContent='ACTIVATE J.A.R.V.I.S.'; updateStatus('Deactivated');});
+        return;
+    }
+    if(lower.startsWith('search for')){
+        const query=lower.replace('search for','').trim();
+        speak(`Accessing global networks for ${query}, sir.`);
+        window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`,'_blank');
+        return;
+    }
+    // BROWSER COMMANDS
+    browserCommand(command);
+    try{
+        const response=await askAI(command);
+        speak(response); addLog('J.A.R.V.I.S.',response);
+    }catch(err){const msg="Apologies, sir. My connection to the Groq core is unstable."; speak(msg); addLog('J.A.R.V.I.S.',msg);}
+}
 
-        function speak(text, onEndCallback = () => {}) {
-            if (synth.speaking) synth.cancel();
-            if (text !== '') {
-                updateStatus('Speaking');
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.voice = jarvisVoice;
-                utterance.pitch = 0.95;
-                utterance.rate = 1.05;
-                utterance.onend = () => {
-                    updateStatus('Thinking');
-                    onEndCallback();
-                    if(isActivated) startListening();
-                };
-                synth.speak(utterance);
-            }
-        }
+// --- GROQ API CALL ---
+async function askAI(prompt){
+  const res=await fetch("https://api.groq.com/openai/v1/chat/completions",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","Authorization":`Bearer ${GROQ_API_KEY}`},
+    body:JSON.stringify({
+      model:"openai/gpt-oss-120b",
+      messages:[
+          {role:"system",content:"You are J.A.R.V.I.S., the AI assistant from Iron Man. Be concise, witty, and formal. Address the user as 'sir'. No markdown."},
+          {role:"user",content:prompt}
+      ]
+    })
+  });
+  const data=await res.json();
+  return data.choices[0].message.content;
+}
 
-        function addLog(speaker, message) {
-            const entry = document.createElement('p');
-            entry.className = 'mb-1';
-            entry.innerHTML = `<strong class="glow-text ${speaker === 'J.A.R.V.I.S.' ? 'text-cyan-400' : 'text-white'}">${speaker}:</strong> ${message}`;
-            logContainer.appendChild(entry);
-            logContainer.scrollTop = logContainer.scrollHeight;
-        }
-
-        function updateStatus(text) {
-            statusText.textContent = text.toUpperCase();
-            text.toLowerCase() === 'listening' ? orb.classList.add('listening') : orb.classList.remove('listening');
-        }
-
-        // ----------------- LISTENING & COMMANDS -----------------
-        function startListening() {
-            if (isListening || synth.speaking) return;
-            try {
-                recognition.start();
-                isListening = true;
-            } catch(e) { isListening = false; }
-        }
-
-        function setupRecognition() {
-            recognition.continuous = false;
-            recognition.lang = 'en-US';
-            recognition.onstart = () => { isListening = true; updateStatus('Listening'); };
-            recognition.onresult = (e) => {
-                const transcript = e.results[0][0].transcript.trim();
-                addLog('User', transcript);
-                processCommand(transcript);
-            };
-            recognition.onend = () => {
-                isListening = false;
-                if (isActivated && !synth.speaking) {
-                    updateStatus('Thinking');
-                    setTimeout(() => { if(isActivated) startListening(); }, 500);
-                }
-            };
-        }
-
-        async function processCommand(command) {
-            updateStatus('Processing');
-            const lower = command.toLowerCase();
-
-            if (lower.includes('shutdown') || lower.includes('deactivate')) {
-                speak("Shutting down systems. Goodbye, sir.", () => {
-                    isActivated = false;
-                    startBtn.textContent = 'ACTIVATE J.A.R.V.I.S.';
-                    updateStatus('Deactivated');
-                });
-                return;
-            }
-
-            if (lower.startsWith('search for')) {
-                const query = lower.replace('search for', '').trim();
-                speak(`Accessing global networks for ${query}, sir.`);
-                window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
-                return;
-            }
-
-            if (lower.includes('scan environment') || lower.includes('what do you see')) {
-                analyzeVision();
-                return;
-            }
-
-            try {
-                const response = await askAI(command);
-                speak(response);
-                addLog('J.A.R.V.I.S.', response);
-            } catch (err) {
-                const msg = "Apologies, sir. My connection to the Groq core is unstable.";
-                speak(msg);
-                addLog('J.A.R.V.I.S.', msg);
-            }
-        }
-
-        async function askAI(prompt) {
-          const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${GROQ_API_KEY}`
-            },
-            body: JSON.stringify({
-              model: "openai/gpt-oss-120b",
-              messages: [
-                  { role: "system", content: "You are J.A.R.V.I.S., the AI assistant from Iron Man. Be concise, witty, and formal. Address the user as 'sir'. No markdown." },
-                  { role: "user", content: prompt }
-              ]
-            })
-          });
-
-          const data = await res.json();
-          return data.choices[0].message.content;
-        }
-
-        // ----------------- CAMERA / VISION -----------------
-        async function activateCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                cameraFeed.srcObject = stream;
-                cameraFeed.style.display = 'block';
-                addLog('System', 'Camera vision activated.');
-            } catch(e) {
-                addLog('System', 'Camera access denied.');
-            }
-        }
-
-        async function analyzeVision() {
-            if (!cameraFeed.srcObject) {
-                addLog('J.A.R.V.I.S.', 'Camera is not active, sir.');
-                return;
-            }
-            cameraCanvas.width = cameraFeed.videoWidth;
-            cameraCanvas.height = cameraFeed.videoHeight;
-            cameraCtx.drawImage(cameraFeed, 0, 0);
-            const imageData = cameraCtx.getImageData(0,0,cameraCanvas.width,cameraCanvas.height);
-
-            // Basic brightness analysis
-            let brightness = 0;
-            for (let i=0;i<imageData.data.length;i+=4) {
-                brightness += (imageData.data[i]+imageData.data[i+1]+imageData.data[i+2])/3;
-            }
-            brightness /= (imageData.data.length/4);
-            addLog('J.A.R.V.I.S.', brightness>120?'Scene appears bright.':'Scene appears dark.');
-
-            // OCR using Tesseract.js
-            const { data } = await Tesseract.recognize(cameraCanvas, 'eng');
-            if (data.text.trim().length>5) {
-                addLog('J.A.R.V.I.S.', `I see text: "${data.text.trim().slice(0,80)}..."`);
-            } else {
-                addLog('J.A.R.V.I.S.', 'No readable text detected.');
-            }
-        }
-
-        // ----------------- BUTTON EVENTS -----------------
-        startBtn.addEventListener('click', () => {
-            if (!isActivated) {
-                isActivated = true;
-                startBtn.textContent = 'DEACTIVATE J.A.R.V.I.S.';
-                addLog('System', 'Groq core initialized.');
-                speak("Systems online. How can I help you, sir?", startListening);
-                setupRecognition();
-            } else {
-                isActivated = false;
-                startBtn.textContent = 'ACTIVATE J.A.R.V.I.S.';
-                recognition.stop();
-                updateStatus('Deactivated');
-            }
-        });
-
-        cameraBtn.addEventListener('click', () => {
-            activateCamera();
-        });
-
-    </script>
+startBtn.addEventListener('click',()=>{
+    if(!isActivated){
+        isActivated=true;
+        startBtn.textContent='DEACTIVATE J.A.R.V.I.S.';
+        addLog('System','Groq core initialized.');
+        speak("Systems online. How can I help you, sir?", startListening);
+        setupRecognition();
+    }else{
+        isActivated=false;
+        startBtn.textContent='ACTIVATE J.A.R.V.I.S.';
+        recognition.stop();
+        updateStatus('Deactivated');
+    }
+});
+</script>
 </body>
 </html>
